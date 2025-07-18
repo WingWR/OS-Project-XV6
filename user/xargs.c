@@ -20,12 +20,6 @@ enum char_type {
   C_LINE_END
 };
 
-/**
- * @brief 获取字符类型
- *
- * @param c 待判定的字符
- * @return enum char_type 字符类型
- */
 enum char_type get_char_type(char c)
 {
   switch (c) {
@@ -38,13 +32,6 @@ enum char_type get_char_type(char c)
   }
 }
 
-/**
- * @brief 状态转换
- *
- * @param cur 当前的状态
- * @param ct 将要读取的字符
- * @return enum state 转换后的状态
- */
 enum state transform_state(enum state cur, enum char_type ct)
 {
   switch (cur) {
@@ -71,14 +58,6 @@ enum state transform_state(enum state cur, enum char_type ct)
   return S_END;
 }
 
-
-/**
- * @brief 将参数列表后面的元素全部置为空
- *        用于换行时，重新赋予参数
- *
- * @param x_argv 参数指针数组
- * @param beg 要清空的起始下标
- */
 void clearArgv(char *x_argv[MAXARG], int beg)
 {
   for (int i = beg; i < MAXARG; ++i)
