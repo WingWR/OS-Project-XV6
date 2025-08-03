@@ -16,6 +16,10 @@ void kernelvec();
 
 extern int devintr();
 
+int is_lazy_addr(uint64 va);
+pte_t *walk(pagetable_t pagetable, uint64 va, int alloc);
+int lazy_alloc(uint64 va);
+
 void
 trapinit(void)
 {
@@ -67,6 +71,12 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
+  } else if((r_scause() == 13 || r_scause() == 15) && is_lazy_addr(r_stval())){ 
+    // 如果是 page fault，那就直接分配内存
+    uint64 fault_addr = r_stval();
+      if(lazy_alloc(fault_addr) < 0){
+        p->killed = 1;
+      }
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
@@ -218,3 +228,42 @@ devintr()
   }
 }
 
+int is_lazy_addr(uint64 va){
+  struct proc *p = myproc();
+  if(va < PGROUNDDOWN(p->trapframe->sp)
+  && va >= PGROUNDDOWN(p->trapframe->sp) - PGSIZE
+  ){
+    // 防止 guard page，这个之后会提到
+    return 0;
+  }
+  if(va > MAXVA){
+    return 0;
+  }
+  pte_t* pte = walk(p->pagetable, va, 0);
+  
+  if(pte && (*pte & PTE_V)){
+    return 0;
+  }  
+
+  if(va >= p->sz){
+    return 0;
+  }
+
+  return 1;
+}
+
+int lazy_alloc(uint64 va){
+  struct proc *p = myproc();
+  uint64 page_sta = PGROUNDDOWN(va);
+  uint64* newmem = kalloc();
+  if(newmem == 0){
+    return -1;
+  }
+  memset(newmem, 0, PGSIZE);
+  if(mappages(p->pagetable, page_sta, PGSIZE, (uint64)newmem, PTE_W|PTE_R|PTE_X|PTE_U) != 0){
+    kfree(newmem);
+    return -1;
+  }
+  
+  return 0;
+}

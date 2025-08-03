@@ -43,12 +43,24 @@ sys_sbrk(void)
 {
   int addr;
   int n;
-
+  struct proc *p = myproc();
   if(argint(0, &n) < 0)
     return -1;
-  addr = myproc()->sz;
-  if(growproc(n) < 0)
-    return -1;
+  addr = p->sz;
+  if(n < 0){
+    if(p->sz + n < 0){ // 一个进程不能释放比自己大的空间
+      return -1;
+    }
+    if(growproc(n) < 0){
+      // 注意这里是实际调用 growproc 去释放空间的。
+      printf("growproc err\n");
+      return -1;
+    }
+  }else{
+    myproc()->sz += n;
+  }
+  // if(growproc(n) < 0) 
+  //   return -1;
   return addr;
 }
 
