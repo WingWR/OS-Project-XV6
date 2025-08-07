@@ -378,7 +378,7 @@ static uint
 bmap(struct inode *ip, uint bn)
 {
   uint addr, *a;
-  struct buf *bp;
+  struct buf *bp, *bp2; 
 
   if(bn < NDIRECT){
     if((addr = ip->addrs[bn]) == 0)
@@ -401,8 +401,34 @@ bmap(struct inode *ip, uint bn)
     return addr;
   }
 
+  bn -= NINDIRECT;
+
+  if(bn < NBI_INDIRECT){
+    if((addr = ip->addrs[NDIRECT + 1]) == 0) 
+      ip->addrs[NDIRECT + 1] = addr = balloc(ip->dev);    
+    bp = bread(ip->dev, addr);
+    a = (uint *)bp->data;
+    uint idx_b1 = bn / NINDIRECT;
+    if((addr = a[idx_b1]) == 0){ // 一个一级块负责 256 个二级块，这里检测对应一级块是否存在
+      a[idx_b1] = addr = balloc(ip->dev);
+      log_write(bp); 
+    } 
+    brelse(bp);
+    
+    bp2 = bread(ip->dev, addr); // bp2 为二级块的缓存
+    a = (uint *)bp2->data;
+    uint idx_b2 = bn % NINDIRECT;
+    if((addr = a[idx_b2]) == 0){
+      a[idx_b2] = addr = balloc(ip->dev);
+      log_write(bp2);
+    }
+    brelse(bp2);
+    return addr;
+  }
+  
   panic("bmap: out of range");
 }
+
 
 // Truncate inode (discard contents).
 // Caller must hold ip->lock.
@@ -431,7 +457,29 @@ itrunc(struct inode *ip)
     bfree(ip->dev, ip->addrs[NDIRECT]);
     ip->addrs[NDIRECT] = 0;
   }
+  
+  if(ip->addrs[NDIRECT + 1]){
+    bp = bread(ip->dev, ip->addrs[NDIRECT + 1]);
+    a = (uint*)bp->data;
+    for (i = 0; i < NINDIRECT; i++){
+      if(a[i]){
+        struct buf* bp2 = bread(ip->dev, a[i]); 
+        uint *a2 = (uint *)bp2->data;
+        for(j = 0; j < NINDIRECT; j++){
+          if(a2[j])
+            bfree(ip->dev, a2[j]);
+        } 
 
+        brelse(bp2);
+        bfree(ip->dev, a[i]);
+        // 和 a[i] 对应的是 bp2
+        // a[i] 是块号，bp2 是实际的块缓存
+      }      
+    }
+    brelse(bp); // 释放缓存
+    bfree(ip->dev, ip->addrs[NDIRECT + 1]); // 释放磁盘块
+    ip->addrs[NDIRECT + 1] = 0; // 不是 + 1
+  }
   ip->size = 0;
   iupdate(ip);
 }
