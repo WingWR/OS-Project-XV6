@@ -3,8 +3,12 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "spinlock.h"
+#include "sleeplock.h"
+#include "fs.h" 
 #include "proc.h"
 #include "defs.h"
+#include "fcntl.h"
+#include "file.h"
 
 struct spinlock tickslock;
 uint ticks;
@@ -13,7 +17,7 @@ extern char trampoline[], uservec[], userret[];
 
 // in kernelvec.S, calls kerneltrap().
 void kernelvec();
-
+int mmap_handler(int va, int cause);
 extern int devintr();
 
 void
@@ -67,6 +71,15 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
+  } else if(r_scause() == 13 || r_scause() == 15) {
+#ifdef LAB_MMAP
+    // 读取产生页面故障的虚拟地址，并判断是否位于有效区间
+    uint64 fault_va = r_stval();
+    if(PGROUNDUP(p->trapframe->sp) - 1 < fault_va && fault_va < p->sz) {
+      if(mmap_handler(r_stval(), r_scause()) != 0) p->killed = 1;
+    } else
+      p->killed = 1;
+#endif
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
@@ -218,3 +231,52 @@ devintr()
   }
 }
 
+int mmap_handler(int va, int cause) {
+  int i;
+  struct proc* p = myproc();
+  // 根据地址查找属于哪一个VMA
+  for(i = 0; i < NVMA; ++i) {
+    if(p->vma[i].used && p->vma[i].addr <= va && va <= p->vma[i].addr + p->vma[i].len - 1) {
+      break;
+    }
+  }
+  if(i == NVMA)
+    return -1;
+
+  int pte_flags = PTE_U;
+  if(p->vma[i].prot & PROT_READ) pte_flags |= PTE_R;
+  if(p->vma[i].prot & PROT_WRITE) pte_flags |= PTE_W;
+  if(p->vma[i].prot & PROT_EXEC) pte_flags |= PTE_X;
+
+
+  struct file* vf = p->vma[i].vfile;
+  // 读导致的页面错误
+  if(r_scause() == 13 && vf->readable == 0) return -1;
+  // 写导致的页面错误
+  if(r_scause() == 15 && vf->writable == 0) return -1;
+
+  void* pa = kalloc();
+  if(pa == 0)
+    return -1;
+  memset(pa, 0, PGSIZE);
+
+  // 读取文件内容
+  ilock(vf->ip);
+  int offset = p->vma[i].offset + PGROUNDDOWN(va - p->vma[i].addr);
+  int readbytes = readi(vf->ip, 0, (uint64)pa, offset, PGSIZE);
+  // 什么都没有读到
+  if(readbytes == 0) {
+    iunlock(vf->ip);
+    kfree(pa);
+    return -1;
+  }
+  iunlock(vf->ip);
+
+  // 添加页面映射
+  if(mappages(p->pagetable, PGROUNDDOWN(va), PGSIZE, (uint64)pa, pte_flags) != 0) {
+    kfree(pa);
+    return -1;
+  }
+
+  return 0;
+}

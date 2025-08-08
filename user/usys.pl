@@ -36,5 +36,5 @@ entry("getpid");
 entry("sbrk");
 entry("sleep");
 entry("uptime");
-entty("mmap");
-entty("munmap");
+entry("mmap");
+entry("munmap");
