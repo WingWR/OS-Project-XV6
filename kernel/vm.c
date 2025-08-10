@@ -47,12 +47,39 @@ kvminit()
   kvmmap(TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
 }
 
+void 
+vminit(pagetable_t pagetable)
+{
+  // uart registers
+  vmmap(pagetable, UART0, UART0, PGSIZE, PTE_R | PTE_W);
+  // virtio mmio disk interface
+  vmmap(pagetable, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
+  // // CLINT
+  // vmmap(pagetable, CLINT, CLINT, 0x10000, PTE_R | PTE_W);
+  // PLIC
+  vmmap(pagetable, PLIC, PLIC, 0x400000, PTE_R | PTE_W);
+  // map kernel text executable and read-only.
+  vmmap(pagetable, KERNBASE, KERNBASE, (uint64)etext-KERNBASE, PTE_R | PTE_X);
+  // map kernel data and the physical RAM we'll make use of.
+  vmmap(pagetable, (uint64)etext, (uint64)etext, PHYSTOP-(uint64)etext, PTE_R | PTE_W);
+  // map the trampoline for trap entry/exit to
+  // the highest virtual address in the kernel.
+  vmmap(pagetable, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+}
+
 // Switch h/w page table register to the kernel's page table,
 // and enable paging.
 void
 kvminithart()
 {
   w_satp(MAKE_SATP(kernel_pagetable));
+  sfence_vma();
+}
+
+void 
+vminithart(pagetable_t pagetable)
+{
+  w_satp(MAKE_SATP(pagetable));
   sfence_vma();
 }
 
@@ -121,6 +148,13 @@ kvmmap(uint64 va, uint64 pa, uint64 sz, int perm)
     panic("kvmmap");
 }
 
+void 
+vmmap(pagetable_t pagetable, uint64 va, uint64 pa, uint64 sz, int perm)
+{
+  if(mappages(pagetable, va, sz, pa, perm) != 0) 
+    panic("vmmap");
+}
+
 // translate a kernel virtual address to
 // a physical address. only needed for
 // addresses on the stack.
@@ -137,6 +171,22 @@ kvmpa(uint64 va)
     panic("kvmpa");
   if((*pte & PTE_V) == 0)
     panic("kvmpa");
+  pa = PTE2PA(*pte);
+  return pa+off;
+}
+
+uint64
+vmpa(pagetable_t pagetable, uint64 va)
+{
+  uint64 off = va % PGSIZE;
+  pte_t *pte;
+  uint64 pa;
+
+  pte = walk(pagetable, va, 0);
+  if(pte == 0)
+    panic("vmpa");
+  if((*pte & PTE_V) == 0)
+    panic("vmpa");
   pa = PTE2PA(*pte);
   return pa+off;
 }
@@ -205,6 +255,12 @@ uvmcreate()
     return 0;
   memset(pagetable, 0, PGSIZE);
   return pagetable;
+}
+
+pagetable_t
+kvmcreate()
+{
+  return uvmcreate();
 }
 
 // Load the user initcode into address 0 of pagetable,
