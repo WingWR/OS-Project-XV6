@@ -1,20 +1,20 @@
-<h2 style="text-align:center;font-size:36px;">Lab Copy on-write</h2>
+# Lab Copy on-write
 
-# 1. Implement copy-on write(hard)
-## 1.1 实验目的
+## 1. Implement copy-on write(hard)
+### 1.1 实验目的
 
 在`xv6`内核中实现`copy-on-write fork`
 
-## 1.2 实验步骤
+### 1.2 实验步骤
 
 1. 在`kernel/riscv.h`中加入宏定义
 ```c
-#define PTE_V (1L << 0) // valid
-#define PTE_R (1L << 1)
-#define PTE_W (1L << 2)
-#define PTE_X (1L << 3)
-#define PTE_U (1L << 4) // 1 -> user can access
-#define PTE_C (1L << 8)
+##define PTE_V (1L << 0) // valid
+##define PTE_R (1L << 1)
+##define PTE_W (1L << 2)
+##define PTE_X (1L << 3)
+##define PTE_U (1L << 4) // 1 -> user can access
+##define PTE_C (1L << 8)
 ```
 
 2. 定义引用计数的全局变量`ref`
@@ -155,7 +155,7 @@ else if((which_dev = devintr()) != 0){
 }
 ```
 
-## 1.3 实验中遇到的问题和解决办法
+### 1.3 实验中遇到的问题和解决办法
 
 1. 引用计数结构体无法识别:
 
@@ -172,7 +172,7 @@ else if((which_dev = devintr()) != 0){
 if ((uint64)pa < (uint64)end || pa >= PHYSTOP)
 ```
 
-## 1.4 实验心得
+### 1.4 实验心得
 
 理解了操作系统中虚拟内存管理和进程复制机制的底层实现，`Copy-on-Write` 技术通过延迟复制内存页，提高了 `fork()` 的性能，是现代操作系统中非常常见的优化策略。
 

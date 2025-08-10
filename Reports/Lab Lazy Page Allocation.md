@@ -1,11 +1,11 @@
-<h2 style="text-align:center;font-size:36px;">Lab Lazy Page Allocation</h2>
+# Lab Lazy Page Allocation
 
-# 1. Eliminate allocation from sbrk() (easy)
-## 1.1 实验目的
+## 1. Eliminate allocation from sbrk() (easy)
+### 1.1 实验目的
 
 删除`sbrk(n)`系统调用中的页面分配代码，新的`sbrk(n)`应该只将进程的大小增加`n`，然后返回旧的大小
 
-## 1.2 实验步骤
+### 1.2 实验步骤
 
 - 修改`sbrk()`函数:
 ```c
@@ -26,20 +26,20 @@ sys_sbrk(void)
 }
 ```
 
-## 1.3 实验中遇到的问题和解决办法
+### 1.3 实验中遇到的问题和解决办法
 
 未遇到什么问题
 
-## 1.4 实验心得
+### 1.4 实验心得
 
 理解了`Lazy Allocation`的概念，为后面做准备
 
-# 2. Lazy allocation (moderate)
-## 2.1 实验目的
+## 2. Lazy allocation (moderate)
+### 2.1 实验目的
 
 修改`trap.c`中的代码以响应来自用户空间的页面错误，方法是新分配一个物理页面并映射到发生错误的地址，然后返回到用户空间，让进程继续执行
 
-## 2.2 实验步骤
+### 2.2 实验步骤
 
 1. 修改`usertrap()`函数，如果是 `13` 或 `15` 就进行下一步的处理:
 ```c
@@ -70,22 +70,22 @@ for(a = va; a < va + npages*PGSIZE; a += PGSIZE){
       continue;
 ```
 
-## 2.3 实验中遇到的问题和解决办法
+### 2.3 实验中遇到的问题和解决办法
 
 暂时未遇见问题
 
-## 2.4 实验心得
+### 2.4 实验心得
 
 1. 对`usertrap()`中缺页异常的判断和处理逻辑：当出现页面错误时，需要根据`stval`找到出错的虚拟地址，并在合法范围内为其分配新的物理页并映射
 
 2. 修改`uvmunmap()`时需要注意跳过未映射的页，否则会因为访问空指针而`panic`
 
-# 3. Lazytests and Usertests (moderate)
-## 3.1 实验目的
+## 3. Lazytests and Usertests (moderate)
+### 3.1 实验目的
 
 修改 `xv6` 内核代码，使得它能够通过 `lazytests` 和 `usertests`，即保证惰性内存分配机制在各种复杂情况下都能正常运行
 
-## 3.2 实验步骤
+### 3.2 实验步骤
 
 1. 考虑`sbrk`中参数可以为负数的问题，进行修改:
 ```c
@@ -206,12 +206,12 @@ walkaddr(pagetable_t pagetable, uint64 va)
 
 5. 正确处理发生在用户栈下面地址的缺页错误
 
-## 3.3 实验中遇到的问题和解决办法
+### 3.3 实验中遇到的问题和解决办法
 
 - 自定义的函数`is_lazy_addr(uint64 va)`和`int lazy_alloc(uint64 va)`无法在其他文件中调用:
 
 将函数声明在`defs.h`中，可以全局调用
 
-## 3.4 实验心得
+### 3.4 实验心得
 
 通过本次实验，对`Lazy Allocation`的机制和内核内存管理有了更深入的理解。在实现过程中，需要考虑各种情况，例如 `sbrk` 参数为负数时释放内存、`fork` 时的内存拷贝、缺页异常的处理以及内核在访问未分配页时的应对

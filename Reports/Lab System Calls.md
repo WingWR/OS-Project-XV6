@@ -1,11 +1,11 @@
-<h2 style="text-align:center;font-size:36px;">Lab System Calls</h2>
+# Lab System Calls
 
-# 1. System call tracing (moderate)
-## 1.1 实验目的
+## 1. System call tracing (moderate)
+### 1.1 实验目的
 
 创建一个新的`trace`系统调用来控制跟踪
 
-## 1.2 实验步骤
+### 1.2 实验步骤
 
 - 修改 `Makefile`:
 在 UPROGS 变量中添加:
@@ -16,7 +16,7 @@
 - 定义系统调用编号:
 在 `kernel/syscall.h` 文件中添加：
 ```c
-#define SYS_trace 22
+##define SYS_trace 22
 ```
 
 - 添加系统调用处理函数:
@@ -67,25 +67,25 @@ entry("trace");
 ```
 
 
-## 1.3 实验中遇到的问题和解决办法
+### 1.3 实验中遇到的问题和解决办法
 - 调用 trace 函数时找不到定义:
 在 user/usys.pl 中添加 entry("trace");，重新生成用户态系统调用接口。
 
 - 发生`undefined reference to 'trace'`，链接时找不到对应实现。
 在内核代码中实现 `sys_trace` 函数，并在 `syscall.c` 中正确声明和注册。
 
-## 1.4 实验心得
+### 1.4 实验心得
 
 通过本次实验，深入理解了 xv6 系统调用的工作流程，包括用户态调用接口的生成、内核系统调用的注册与调度过程。
 
 熟悉了内核数据结构 proc 的扩展和进程控制信息的保存方法。
 
-# 2. Sysinfo (moderate)
-## 2.1 实验目的
+## 2. Sysinfo (moderate)
+### 2.1 实验目的
 
 添加一个系统调用`sysinfo`，它收集有关正在运行的系统的信息
 
-## 2.2 实验步骤
+### 2.2 实验步骤
 
 1. 在`Makefile`的`UPROGS`中添加`$U/_sysinfotest`
 2. 在`kernel/kalloc.c`中添加一个函数用于获取空闲内存量
@@ -144,7 +144,7 @@ struct sysinfo;
 int sysinfo(struct sysinfo *);
 ```
 
-## 2.3 实验中遇到的问题和解决办法
+### 2.3 实验中遇到的问题和解决办法
 
 1. 没有在 `sysproc.c` 文件中声明 `freebytes` 函数和`procnum`函数:
 
@@ -167,9 +167,9 @@ int sysinfo(struct sysinfo *);
 
 在 `kernel/syscall.h` 中添加定义:
 ```c
-#define SYS_sysinfo 23
+##define SYS_sysinfo 23
 ```
 
-## 2.4 实验心得
+### 2.4 实验心得
 
 本实验帮助我理解了如何在 xv6 中设计和实现一个新的系统调用流程，从用户态调用、参数传递、内核态实现再到数据回传。

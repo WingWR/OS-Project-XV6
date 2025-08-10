@@ -1,20 +1,20 @@
-<h2 style="text-align:center;font-size:36px;">Lab File System</h2>
+# Lab File System
 
-# 1. Large files (moderate)
-## 1.1 实验目的
+## 1. Large files (moderate)
+### 1.1 实验目的
 
 增加xv6文件的最大大小
 
-## 1.2 实验步骤
+### 1.2 实验步骤
 
 1. 在`fs.h`中添加宏定义
 ```c
 // 文件系统相关
-#define NDIRECT 11
-#define NINDIRECT (BSIZE / sizeof(uint))
-#define NDINDIRECT ((BSIZE / sizeof(uint)) * (BSIZE / sizeof(uint)))
-#define MAXFILE (NDIRECT + NINDIRECT + NDINDIRECT)
-#define NADDR_PER_BLOCK (BSIZE / sizeof(uint))  // 一个块中的地址数量
+##define NDIRECT 11
+##define NINDIRECT (BSIZE / sizeof(uint))
+##define NDINDIRECT ((BSIZE / sizeof(uint)) * (BSIZE / sizeof(uint)))
+##define MAXFILE (NDIRECT + NINDIRECT + NDINDIRECT)
+##define NADDR_PER_BLOCK (BSIZE / sizeof(uint))  // 一个块中的地址数量
 ```
 
 2. 修改`inode`结构体中`addrs`元素数量
@@ -145,7 +145,7 @@ itrunc(struct inode *ip)
 }
 ```
 
-## 1.3 实验中遇到的问题和解决办法
+### 1.3 实验中遇到的问题和解决办法
 
 1. `uint *a2 = bp2->data;`导致类型不匹配警告:
  
@@ -155,25 +155,25 @@ itrunc(struct inode *ip)
 
 修改`NDIRECT`、`NINDIRECT`和`NDINDIRECT`宏定义，避免索引计算错误
 
-## 1.4 实验心得
+### 1.4 实验心得
 
 理解了多级间接索引在文件系统中扩展文件大小的实现机制。修改`bmap`函数支持二级索引，使得文件可以存储更多数据块，极大提升了文件系统的容量
 
-# 2. Symbolic links (moderate)
-## 2.1 实验目的
+## 2. Symbolic links (moderate)
+### 2.1 实验目的
 
 实现`symlink(char *target, char *path)`系统调用，该调用在引用由`target`命名的文件的路径处创建一个新的符号链接
 
-## 2.2 实验步骤
+### 2.2 实验步骤
 
 1. 添加 `O_NOFOLLOW` 的标志位，打开软连接本身
 ```c
-#define O_RDONLY  0x000
-#define O_WRONLY  0x001
-#define O_RDWR    0x002
-#define O_CREATE  0x200
-#define O_TRUNC   0x400
-#define O_NOFOLLOW 0x004
+##define O_RDONLY  0x000
+##define O_WRONLY  0x001
+##define O_RDWR    0x002
+##define O_CREATE  0x200
+##define O_TRUNC   0x400
+##define O_NOFOLLOW 0x004
 ```
 
 2. 注册系统调用`sys_symlink()`
@@ -219,14 +219,12 @@ if(ip->type == T_SYMLINK && (omode & O_NOFOLLOW) == 0) {
 ···
 ```
 
-## 2.3 实验中遇到的问题和解决办法
+### 2.3 实验中遇到的问题和解决办法
 
 1. 软链接之间存在循环引用，导致系统崩溃
 
 在 `follow_symlink()` 函数中加入最大递归深度限制
 
-
-
-## 2.4 实验心得
+### 2.4 实验心得
 
 通过本次实验，理解了文件系统中软链接的实现原理

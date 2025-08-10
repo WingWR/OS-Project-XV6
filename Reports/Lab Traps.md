@@ -1,11 +1,11 @@
-<h2 style="text-align:center;font-size:36px;">Traps</h2>
+# Traps
 
-# 1. RISC-V assembly (easy)
-## 1.1 实验目的
+## 1. RISC-V assembly (easy)
+### 1.1 实验目的
 
 阅读`call.asm`中函数`g`、`f`和`main`的代码，回答一些问题。
 
-## 1.2 实验步骤
+### 1.2 实验步骤
 
 **1. Which registers contain arguments to functions? For example, which register holds 13 in main's call to printf?**
 
@@ -42,20 +42,20 @@ printf("H%x Wo%s", 57616, &i);
 
 - **Answer:** 原本需要两个参数，却只传入了一个，因此`y=`后面打印的结果取决于之前`a2`中保存的数据 
 
-## 1.3 实验中遇到的问题和解决办法
+### 1.3 实验中遇到的问题和解决办法
 
 未遇到问题
 
-## 1.4 实验心得
+### 1.4 实验心得
 
 通过本次实验，我对 RISC-V 汇编函数调用规范 和 参数传递方式 有了更直观的认识，从底层角度理解了 C 语言与汇编之间的联系，并让我更加熟悉了寄存器使用规范和编译器优化对汇编代码的影响
 
-# 2. Backtrace(moderate)
-## 2.1 实验目的
+## 2. Backtrace(moderate)
+### 2.1 实验目的
 
 在`kernel/printf.c`中实现名为`backtrace()`的函数
 
-## 2.2 实验步骤
+### 2.2 实验步骤
 
 1. 在`kernel/printf.c`中实现名为`backtrace()`的函数
 ```c
@@ -87,7 +87,7 @@ r_fp()
 }
 ```
 
-## 2.3 实验中遇到的问题和解决办法
+### 2.3 实验中遇到的问题和解决办法
 
 1. `r_fp()`未声明:
 
@@ -97,16 +97,16 @@ r_fp()
 
 在 `kernel/sysproc.c`中调用`backtrace()`
 
-## 2.4 实验心得
+### 2.4 实验心得
 
 深入理解了` RISC-V `函数调用栈帧结构 及其回溯原理。在实现 `backtrace()` 的过程中，我学习了如何利用帧指针`fp`在内核态中遍历调用栈，并逐层打印出返回地址，从而直观展示了函数的调用路径。
 
-# 3. Alarm(Hard)
-## 3.1 实验目的
+## 3. Alarm(Hard)
+### 3.1 实验目的
 
 向`XV6`添加一个特性，在进程使用CPU的时间内，XV6定期向进程发出警报
 
-## 3.2 实验步骤
+### 3.2 实验步骤
 
 1. 在`user.h`中添加函数声明:
 ```c
@@ -163,7 +163,7 @@ if(which_dev == 2)
   }
 ```
 
-## 3.3 实验中遇到的问题和解决办法
+### 3.3 实验中遇到的问题和解决办法
 
 1. 未声明`alarmtest`:
 
@@ -173,7 +173,7 @@ if(which_dev == 2)
 
 在`user.h`中添加`sigalarm`和`sigreturn`
 
-## 3.4 实验心得
+### 3.4 实验心得
 
 最后这个Alarm实验部分还是难度非常大，用了很久时间才完成，很多地方也并没有完全理解。但是通过完成实验的过程，
 了解了时钟中断是怎么让内核定时介入用户进程的，同时还学会了保存和恢复进程状态，必须保存 `trapframe`，并在 `sigreturn()` 中恢复

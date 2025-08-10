@@ -1,11 +1,11 @@
-<h2 style="text-align:center;font-size:36px;">Lab Locks</h2>
+# Lab Locks
 
-# 1. Memory allocator (moderate)
-## 1.1 实验目的
+## 1. Memory allocator (moderate)
+### 1.1 实验目的
 
 实现每个CPU的空闲列表，并在CPU的空闲列表为空时进行窃取
 
-## 1.2 实验步骤
+### 1.2 实验步骤
 
 1. 将`kmem`定义为一个数组，包含`NCPU`个元素，每个CPU对应一个
 ```c
@@ -92,7 +92,7 @@ kalloc(void)
 }
 ```
 
-## 1.3 实验中遇到的问题和解决办法
+### 1.3 实验中遇到的问题和解决办法
 
 1. 获取`cpuid()`前未关闭中断
 
@@ -102,23 +102,23 @@ kalloc(void)
 
 统一改为kmem[i].lock格式
 
-## 1.4 实验心得
+### 1.4 实验心得
 
 对xv6中内存分配器的设计有了更深入的理解。单一全局锁虽然简单，但不适合多核环境
 
 按CPU划分空闲链表并配合窃取机制，能提升并发性能
 
-# 2. Buffer cache (hard)
-## 2.1 实验目的
+## 2. Buffer cache (hard)
+### 2.1 实验目的
 
 修改`bget`和`brelse`，以便`bcache`中不同块的并发查找和释放不太可能在锁上发生冲突
 
-## 2.2 实验步骤
+### 2.2 实验步骤
 
 1. 定义哈希桶结构，并在`bcache`中删除全局缓冲区链表，改为使用素数个散列桶
 ```c
-#define NBUCKET 13
-#define HASH(id) (id % NBUCKET)
+##define NBUCKET 13
+##define HASH(id) (id % NBUCKET)
 
 struct hashbuf {
   struct buf head;       // 头节点
@@ -267,7 +267,7 @@ bget(uint dev, uint blockno) {
 }
 ```
 
-## 2.3 实验中遇到的问题和解决办法
+### 2.3 实验中遇到的问题和解决办法
 
 1. `bget`中重新分配持有会两个锁，如果桶a持有自己的锁，再申请桶b的锁，与此同时如果桶b持有自己的锁，再申请桶a的锁就会造成死锁:
 
@@ -294,7 +294,7 @@ for (b = bcache.buckets[bid].head; b; b = b->next) {
 }
 ```
 
-## 2.4 实验心得
+### 2.4 实验心得
 
 `xv6` 的 `buffer cache` 是用一个全局的链表和锁管理所有缓冲区，这在单核环境下简单有效，但在多核并发环境下会成为瓶颈，也容易引发数据竞争。
 
