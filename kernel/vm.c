@@ -307,6 +307,20 @@ uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz)
   return newsz;
 }
 
+uint64
+vmdealloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int do_free)
+{
+  if(newsz >= oldsz)
+    return oldsz;
+
+  if(PGROUNDUP(newsz) < PGROUNDUP(oldsz)){
+    int npages = (PGROUNDUP(oldsz) - PGROUNDUP(newsz)) / PGSIZE;
+    uvmunmap(pagetable, PGROUNDUP(newsz), npages, do_free);
+  }
+
+  return newsz;
+}
+
 // Deallocate user pages to bring the process size from oldsz to
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
 // need to be less than oldsz.  oldsz can be larger than the actual
@@ -314,15 +328,7 @@ uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz)
 uint64
 uvmdealloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz)
 {
-  if(newsz >= oldsz)
-    return oldsz;
-
-  if(PGROUNDUP(newsz) < PGROUNDUP(oldsz)){
-    int npages = (PGROUNDUP(oldsz) - PGROUNDUP(newsz)) / PGSIZE;
-    uvmunmap(pagetable, PGROUNDUP(newsz), npages, 1);
-  }
-
-  return newsz;
+  return vmdealloc(pagetable, oldsz, newsz, 1);
 }
 
 // Recursively free page-table pages.
@@ -388,6 +394,31 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
 
  err:
   uvmunmap(new, 0, i / PGSIZE, 1);
+  return -1;
+}
+
+int
+u2kvmcopy(pagetable_t old, pagetable_t new, uint64 start, uint64 end)
+{
+  pte_t *pte;
+  uint64 pa, i;
+  uint flags;
+
+  for(i=PGROUNDUP(start); i<end; i+=PGSIZE){
+    if((pte = walk(old, i, 0)) == 0)
+      panic("u2kvmcopy: pte should exist");
+    if((*pte & PTE_V) == 0)
+      panic("u2kvmcopy: page not present");
+    pa = PTE2PA(*pte);
+    flags = PTE_FLAGS(*pte) & (~PTE_U);
+
+    if(mappages(new, i, PGSIZE, pa, flags) != 0)
+      goto err;
+  }
+  return 0;
+
+ err:
+  uvmunmap(new, start, (i-start)/PGSIZE, 0);
   return -1;
 }
 
